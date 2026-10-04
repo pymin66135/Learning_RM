@@ -43,10 +43,18 @@ long wait_count=0; //等待计数，计时时间到后，获取起摆成功的位置
 long D_Count;//用于辅助获取摆杆角度变化率的中间变量
 float Last_Angle_Balance; //用于获取摆杆角度变化率函数中，保存上一次角度
 
+u8 left,right;
+
+//----------------------------------------------------------------------
+
 int my_position_zero =10000;
 int my_time = 1000;
 
-u8 left,right;
+int Position_Target_Last;
+float Position_K_Forward = 0;
+
+//-----------------------------------------------------------------------
+
 /**************************************************************************
 函数功能：所有的控制代码都在这里面
           TIM1控制的5ms定时中断 
@@ -96,14 +104,14 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 		  if(auto_run==0)
       {
 				//+Turn_Off(Voltage);//倾角、电压保护-
-				if(Swing_up==0) Position_Zero=Encoder,Last_Position=0,Last_Bias=0,Position_Target=0,Swing_up=1,my_position_zero = Position_Zero;
+				if(Swing_up==0) Position_Zero=Encoder,Last_Position=0,Last_Bias=0,Position_Target=0,Swing_up=1,my_position_zero = Position_Zero,Position_Target_Last = Position_Zero;
 				
 				if(Flag_Stop==0)
 				{
 					Balance_Pwm =Balance(Angle_Balance);                                          //===角度PD控制	
 					if(++Position_Target>4) Position_Pwm=Position(Encoder),Position_Target=0;    //===位置PD控制 25ms进行一次位置控制
-					//Moto=Balance_Pwm-Position_Pwm;      //===计算电机最终PWM
-					Moto=Position_Pwm;
+					Moto=Balance_Pwm-Position_Pwm;      //===计算电机最终PWM
+					//Moto=Position_Pwm;
 					Xianfu_Pwm();                        //===PWM限幅 防止占空比100%带来的系统不稳定因素
 					Set_Pwm(Moto);                      //===赋值给PWM寄存器				
 				}
@@ -145,8 +153,12 @@ int Position(int Encoder)
     Position_Bias += Position_Least*0.2;	             //===一阶低通滤波器  
 	  Position_Differential=Position_Bias-Last_Position;
 	  Last_Position=Position_Bias;
-		Position_PWM=Position_Bias*Position_KP+Position_Differential*Position_KD; //===速度控制		
+	  Position_PWM=Position_Bias*Position_KP+Position_Differential*Position_KD; //===速度控制		
 //    Position_PWM=Position_Bias*(Position_KP+Basics_Position_KP)/2+Position_Differential*(Position_KD+Basics_Position_KD)/2; //===位置控制	
+	  Position_PWM += Position_K_Forward* (Position_Zero - Position_Target_Last); 
+	  Position_Target_Last = Position_Zero;
+	 
+	
 	  return Position_PWM;
 }
 

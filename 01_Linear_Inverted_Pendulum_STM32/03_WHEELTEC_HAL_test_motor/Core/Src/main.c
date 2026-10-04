@@ -23,6 +23,8 @@
 #include "tim.h"
 #include "usart.h"
 #include "gpio.h"
+#include <stdio.h>
+#include <string.h>
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -57,12 +59,18 @@ float Angle_Balance;                        //角位移传感器数据
 float Balance_KP=400,Balance_KD=400,Position_KP=20,Position_KD=300;  //PID系数
 float Menu=1,Amplitude1=5,Amplitude2=20,Amplitude3=1,Amplitude4=10; //PID调试相关参数
 extern float D_Angle_Balance; //摆杆角度变化率
+
+char uart_buf[64];    // 加在已有变量后面
+
+
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 /* USER CODE BEGIN PFP */
 void JTAG_Set(u8 mode);
+void usart1_send_string(char *str);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -123,7 +131,7 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
 	  
-		DataScope();	            //===上位机
+		//DataScope();	            //===上位机
 		Tips();                   //===OLED显示与提示
 		delay_flag=1;	            //===50ms中断精准延时标志位		  
 		while(delay_flag);        //===50ms中断精准延时  主要是波形显示上位机需要严格的50ms传输周期
@@ -137,7 +145,13 @@ int main(void)
 //	  Set_Pwm(7200);
 //	  HAL_Delay(500);
 //	  Set_Pwm(-7200);
-//	  HAL_Delay(500);	  
+//	  HAL_Delay(500);
+
+
+    sprintf(uart_buf, "<any>:%d,%d,%d\n",
+            Encoder,Position_Zero,Encoder-Position_Zero);
+
+    usart1_send_string(uart_buf);
 	  
   }
   /* USER CODE END 3 */
@@ -209,6 +223,14 @@ void JTAG_Set(u8 mode)
 	AFIO->MAPR&=0XF8FFFFFF; //Clear MAPR [26:24] //清除MAPR的[26:24]
 	AFIO->MAPR|=temp;       //Set the JTAG mode //设置jtag模式
 }
+
+
+void usart1_send_string(char *str)
+{
+    HAL_UART_Transmit(&huart1, (uint8_t *)str, strlen(str), 1000);
+}
+
+
 /* USER CODE END 4 */
 
 /**
