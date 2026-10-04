@@ -1,0 +1,35 @@
+# =========================
+# Keil 用户 / 个人配置
+# =========================
+*.uvgui.*
+*.uvguix.*
+*.uvopt
+*.uvoptx
+
+# Keil 备份文件
+*.uvproj.saved_uv4
+
+# =========================
+# Keil 编译产物
+# =========================
+*.o
+*.obj
+*.axf
+*.elf
+*.hex
+*.bin
+*.map
+*.lst
+*.crf
+*.d
+*.lnp
+*.build_log.htm
+
+Objects/
+Listings/
+
+# =========================
+# Windows 系统文件
+# =========================
+Thumbs.db
+desktop.ini
