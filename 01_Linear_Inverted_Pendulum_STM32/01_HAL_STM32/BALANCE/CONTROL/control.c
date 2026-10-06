@@ -58,7 +58,15 @@ int last_Encoder=10000; //编码器值
 float last_angle=0;
 float last_x_speed, last_angle_speed;
 float a1 = 1,a2 = 1;
-float t=0.05; //  20ms
+float t=0.020; //  5ms
+
+float k1 = -32.5197f, k2 = -37.7236f, k3 = -77.4635f, k4 = -14.3220f;
+int delay_50_ =0;
+
+
+
+
+//K = (-21.5565, -33.1765, -67.7560, -12.6289)
 //-----------------------------------------------------------------------
 
 /**************************************************************************
@@ -77,31 +85,66 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 		
 		 //Turn_Off(Voltage);//倾角、电压保护
 		
-		//解算速度
-        Encoder = Read_Encoder(4);         
-		x_speed = ( ( (last_Encoder - Encoder) / 1040.0f )*0.036* PI ) / t; //距离÷时间
-		x_speed = a1*x_speed + (1-a1)*last_x_speed;
-		last_x_speed = x_speed;		
-		
-		//计算出实际移动的位置
-		x += ( ( (last_Encoder - Encoder) / 1040.0f )*0.036* PI );
+
 			 
-		last_Encoder = Encoder; //保存上一次编码器的值	
-		
-        Angle_Balance = Get_Adc_Average(3, 10); //===更新姿态
-		
-			 //角度计算 
-		     angle = angle_count(Angle_Balance) /180.0f * PI; //计算角度值
 			 
-			 //角速度计算
-			 angle_speed = (angle - last_angle) / t;
-			 angle_speed = a2*angle_speed + (1-a2)*last_angle_speed;
-			 last_angle_speed = angle_speed;
-			 last_angle = angle ;//保存上一次的角度值
-			 //设置PWM
-              Moto = (int)(7200*(u/12.0f)); //===计算电机最终PWM
-              Xianfu_Pwm();   //===PWM限幅 防止占空比100%带来的系统不稳定因素
-              Set_Pwm(Moto);  //===赋值给PWM寄存器
+			 //本地LQR
+			 
+			 
+			 if (++delay_50_ == 4){
+                delay_50_ = 0; 
+			 
+				 
+				//解算速度
+				Encoder = Read_Encoder(4);         
+				x_speed = ( ( (last_Encoder - Encoder) / 1040.0f )*0.036* PI ) / t; //距离÷时间
+				x_speed = a1*x_speed + (1-a1)*last_x_speed;
+				last_x_speed = x_speed;		
+				
+				//计算出实际移动的位置
+				x += ( ( (last_Encoder - Encoder) / 1040.0f )*0.036* PI );
+					 
+				last_Encoder = Encoder; //保存上一次编码器的值	
+				
+				Angle_Balance = Get_Adc_Average(3, 10); //===更新姿态
+				
+					 //角度计算 
+					 angle = angle_count(Angle_Balance) /180.0f * PI; //计算角度值
+					 
+					 //角速度计算
+					 angle_speed = (angle - last_angle) / t;
+					 angle_speed = a2*angle_speed + (1-a2)*last_angle_speed;
+					 last_angle_speed = angle_speed;
+					 last_angle = angle ;//保存上一次的角度值				 
+				 
+				 
+				 
+//				 u = -(k1* (x) + k2 * x_speed + k3* angle +  k4 * angle_speed);
+//				 
+//				 //设置PWM
+//				 
+//			if ( angle>-0.3491 && angle<0.3491 )
+//			 {
+//				Moto = (int)(7200*(u/12.0f)); //===计算电机最终PWM
+//			 }
+//			 else{
+//				Moto = 0;
+//			 }
+
+//				  Xianfu_Pwm();   //===PWM限幅 防止占空比100%带来的系统不稳定因素
+//				 if(Flag_Stop==0)
+//				 {
+//					 Set_Pwm(Moto);
+//				 }
+//				 else
+//				 {
+//					 Set_Pwm(0);
+//			 }			 
+				 
+			 
+			 
+	         }
+
 
 
 //        if (auto_run == 0)

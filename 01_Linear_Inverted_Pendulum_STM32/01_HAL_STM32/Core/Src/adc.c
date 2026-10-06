@@ -24,6 +24,23 @@
 /* ADC2 is maintained manually; keep it disabled in CubeMX. */
 static ADC_HandleTypeDef hadc2;
 static void User_ADC2_Init(void);
+
+/* 200 us spacing using the Cortex-M3 cycle counter; usable inside TIM1 IRQ. */
+static void ADC_Delay200us(void)
+{
+    uint32_t start;
+    const uint32_t cycles = SystemCoreClock / 5000U;
+
+    CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk;
+    DWT->CTRL |= DWT_CTRL_CYCCNTENA_Msk;
+    __DSB();
+    __ISB();
+    start = DWT->CYCCNT;
+    while ((uint32_t)(DWT->CYCCNT - start) < cycles)
+    {
+        __NOP();
+    }
+}
 /* USER CODE END 0 */
 
 ADC_HandleTypeDef hadc1;
@@ -240,6 +257,7 @@ u16 Get_Adc_Average(u32 ch,u8 times)
 	for(t=0;t<times;t++)
 	{
 		temp_val+=Get_Adc(ch);
+		//ADC_Delay200us();
 	}
 	return temp_val/times;
 } 

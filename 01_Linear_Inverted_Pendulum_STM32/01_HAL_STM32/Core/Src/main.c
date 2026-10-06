@@ -28,6 +28,7 @@
 /* USER CODE BEGIN Includes */
 #include <stdio.h>
 #include <string.h>
+#include "control.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -60,11 +61,13 @@ float Menu=1,Amplitude1=5,Amplitude2=20,Amplitude3=1,Amplitude4=10; //PIDµ÷ÊÔÏà¹
 extern float D_Angle_Balance; //°Ú¸Ë½Ç¶È±ä»¯ÂÊ
 
 //-----------------------------------------------------------------
-char tx_buf[64];    
+char tx_buf[80];    
 uint8_t rx_buf[8];
 int cnt =0;
 volatile extern float x, x_speed, angle, angle_speed, u;
 volatile u8 uart_flag = 0;
+
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -139,27 +142,17 @@ int main(void)
 	  
 	  
 	  // ĞèÒª20msµÄÎÈ¶¨µÄ´«Êä
-	    if(uart_flag == 1){
-			 uint8_t sum  =  0; 
-
-			for (int i = 0; i < 6; i++){
-				 sum = (uint8_t)(sum + rx_buf[i]);
-			 }
-			//HAL_UART_Transmit(&huart1, rx_buf, 8, 1000);
-			if (rx_buf[0] == 0xAA &&rx_buf[1] == 0x55 &&rx_buf[6] == sum  &&rx_buf[7] == 0x0D)
-			{	
-            // ½« 4 ¸ö¶ş½øÖÆ×Ö½Ú»¹Ô­³É float
-				memcpy(&u, &rx_buf[2], sizeof(u));
-				sprintf(tx_buf, "<back>:%.3f\n",u); // Õâ±ßÖ»ÓĞu³öÀ´£¬È»ºó¾ÍÊÇ¿ÉÄÜÊÇtx_buf²»¹»³¤£¬ÎÊÌâ²»´ó£¬²»ÖªµÀÉÏÎ»»úÄÇ±ßÓĞÃ»ÓĞÓ°Ïì
-				usart1_send_string(tx_buf);
-			}
-			else
-			{
-				usart1_send_string("RX ERROR\r\n");
-			}			
-		     uart_flag = 0;
-			 HAL_UART_Receive_IT(&huart1, (uint8_t*)rx_buf, 8);
-		}
+	  
+	  
+	  if(uart_flag == 1){
+		 sprintf(tx_buf, "<back>:%.3f\n",u); // Õâ±ßÖ»ÓĞu³öÀ´£¬È»ºó¾ÍÊÇ¿ÉÄÜÊÇtx_buf²»¹»³¤£¬ÎÊÌâ²»´ó£¬²»ÖªµÀÉÏÎ»»úÄÇ±ßÓĞÃ»ÓĞÓ°Ïì
+		 usart1_send_string(tx_buf); 
+		 uart_flag = 0;
+	  }
+	  if(uart_flag == 2){
+		usart1_send_string("RX ERROR\r\n");
+		uart_flag = 0;
+	  }
 		sprintf(tx_buf, "<32>:%d,%.3f,%.3f,%.3f,%.3f\n",cnt,x, x_speed, angle, angle_speed); // x v theta omiga
 		usart1_send_string(tx_buf);
 	  	cnt ++;	
@@ -268,7 +261,33 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
     if (huart->Instance == USART1)
     {      
-		uart_flag = 1;         
+
+
+			 uint8_t sum  =  0; 
+
+			for (int i = 0; i < 6; i++){
+				 sum = (uint8_t)(sum + rx_buf[i]);
+			 }
+			//HAL_UART_Transmit(&huart1, rx_buf, 8, 1000);
+			if (rx_buf[0] == 0xAA &&rx_buf[1] == 0x55 &&rx_buf[6] == sum  &&rx_buf[7] == 0x0D)
+			{	
+            // ½« 4 ¸ö¶ş½øÖÆ×Ö½Ú»¹Ô­³É float
+				memcpy(&u, &rx_buf[2], sizeof(u));
+				
+				
+			//ÉèÖÃPWM
+				Moto = (int)(7200*(u/12.0f)); //===¼ÆËãµç»ú×îÖÕPWM
+				Xianfu_Pwm();   //===PWMÏŞ·ù ·ÀÖ¹Õ¼¿Õ±È100%´øÀ´µÄÏµÍ³²»ÎÈ¶¨ÒòËØ
+				Set_Pwm(Moto);  //===¸³Öµ¸øPWM¼Ä´æÆ÷
+				uart_flag = 1;
+			}
+			else
+			{
+				uart_flag =  2;
+			}			
+			 HAL_UART_Receive_IT(&huart1, (uint8_t*)rx_buf, 8);
+
+        
 //    HAL_UART_Receive_IT(&huart1, (uint8_t*)rx_buf, 8);		
     }
 }
@@ -310,3 +329,6 @@ void assert_failed(uint8_t *file, uint32_t line)
 #endif /* USE_FULL_ASSERT */
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
+
+
+			 
