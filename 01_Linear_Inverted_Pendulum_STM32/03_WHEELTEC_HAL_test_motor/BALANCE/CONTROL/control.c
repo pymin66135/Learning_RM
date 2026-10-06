@@ -91,7 +91,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 					
 					//起摆成功后的角度保护，边缘保护
 					if((success_flag==1)&&((!((Angle_Balance>ANGLE_MIDDLE-600)&&(Angle_Balance<ANGLE_MIDDLE+600))) ||(Encoder>=9900||Encoder<=5900)))
-          Set_Pwm(0),Flag_Stop=1;
+						Set_Pwm(0),Flag_Stop=1;
 					
 					else
 					Set_Pwm(Moto);
@@ -110,8 +110,8 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 				{
 					Balance_Pwm =Balance(Angle_Balance);                                          //===角度PD控制	
 					if(++Position_Target>4) Position_Pwm=Position(Encoder),Position_Target=0;    //===位置PD控制 25ms进行一次位置控制
-					Moto=Balance_Pwm-Position_Pwm;      //===计算电机最终PWM
-					//Moto=Position_Pwm;
+					//Moto=Balance_Pwm-Position_Pwm;      //===计算电机最终PWM
+					Moto=Position_Pwm;
 					Xianfu_Pwm();                        //===PWM限幅 防止占空比100%带来的系统不稳定因素
 					Set_Pwm(Moto);                      //===赋值给PWM寄存器				
 				}
@@ -213,7 +213,8 @@ void Key(void)
 //		if(count==position) 	flag=0,count=0;
 //	}
 	if(flag==1) 
-	{
+	{        
+
 		// 保持原来的周期：count 每增加 2000，完成一个周期
 		float x = (float)(count % my_time) * 3.14159265f*2.0f/((float)my_time);
 
@@ -238,9 +239,24 @@ void Key(void)
 		
 		count ++;	
 		if(count >= my_time){
-			count = 0;   // 0.1HZ
-		}	
-	}	
+			count = 0;   // 0.1HZ	
+		}
+			
+	}
+   
+	if(flag	== 2)
+	{
+		// 锯齿波:count 在 [0, my_time) 之间,线性映射到 [-1, 1]
+        float saw = (float)(count % my_time) / (float)my_time;   // [0, 1)                 
+
+        Position_Zero = my_position_zero + (int)(position * saw/2);
+
+        count++;
+        if(count >= my_time){
+            count = 0;
+        }
+			
+	}
 	
 	
 	

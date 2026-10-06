@@ -60,9 +60,8 @@ float Balance_KP=400,Balance_KD=400,Position_KP=20,Position_KD=300;  //PID系数
 float Menu=1,Amplitude1=5,Amplitude2=20,Amplitude3=1,Amplitude4=10; //PID调试相关参数
 extern float D_Angle_Balance; //摆杆角度变化率
 
-char uart_buf[64];    // 加在已有变量后面
-
-
+char uart_buf[128];    // 加在已有变量后面
+extern int Balance_Pwm,Position_Pwm,Moto;
 
 /* USER CODE END PV */
 
@@ -148,8 +147,7 @@ int main(void)
 //	  HAL_Delay(500);
 
 
-    sprintf(uart_buf, "<any>:%d,%d,%d\n",
-            Encoder,Position_Zero,Encoder-Position_Zero);
+    sprintf(uart_buf, "<any>:%d,%d,%d,%d,%d\n",Encoder,Position_Zero,Balance_Pwm,Position_Pwm,Moto);
 
     usart1_send_string(uart_buf);
 	  
