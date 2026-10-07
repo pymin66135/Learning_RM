@@ -1,0 +1,10 @@
+{
+  "[c]": {
+    "files.encoding": "gbk",
+    "files.autoGuessEncoding": false
+  },
+  "[cpp]": {
+    "files.encoding": "gbk",
+    "files.autoGuessEncoding": false
+  }
+}
